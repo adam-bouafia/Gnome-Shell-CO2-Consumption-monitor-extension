@@ -1,0 +1,13 @@
+{
+  "uuid": "co2consumption@gmail.com",
+  "name": "CO2 Consumption Monitor",
+  "description": "Monitor real-time CO2 emissions from your computer usage",
+  "shell-version": ["43", "44", "45", "46", "47", "48"],
+  "url": "https://github.com/adambouafia/deb-co2-consumption-monitor",
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.co2consumption",
+  "developer": "Adam Bouafia",
+  "developer-url": "https://adam-bouafia.github.io/",
+  "contact": "https://www.linkedin.com/in/adam-bouafia-b597ab86/"
+}
+
