@@ -53,3 +53,10 @@
 .popup-menu .co2-level-extreme,
 .popup-menu .co2-level-critical { color: #000000; }
 
+/* Scroll area for long Overall CO2 Consumers list */
+.co2-overall-scroll { 
+	max-height: 300px; /* prevents popup from growing off-screen; adjust as needed */
+	padding-right: 4px; /* space for scrollbar */
+}
+
+

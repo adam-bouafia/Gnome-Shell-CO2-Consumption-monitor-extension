@@ -516,14 +516,17 @@ class CO2Indicator extends PanelMenu.Button {
                 const clamped = Math.max(0, Math.min(100, pct));
                 const alpha = (clamped / 100).toFixed(2);
                 const rgba = `rgba(255,255,255,${alpha})`;
-                this.menu.box?.set_style?.(`background-color: ${rgba};`);
-                this.menu.box?.queue_relayout?.();
+                if (this.menu?.box) {
+                    this.menu.box.set_style(`background-color: ${rgba};`);
+                    this.menu.box.queue_relayout?.();
+                }
             } catch (_) {}
         };
+        // Apply now (construction)
         applyPopupOpacity();
-        try {
-            this._settingsSignalIds.push(this._settings.connect('changed::popup-opacity', () => applyPopupOpacity()));
-        } catch (_) {}
+        // Re-apply every time the menu opens (covers re-enables and theme resets)
+        this.menu.connect('open-state-changed', (_m, isOpen) => { if (isOpen) applyPopupOpacity(); });
+        try { this._settingsSignalIds.push(this._settings.connect('changed::popup-opacity', () => applyPopupOpacity())); } catch (_) {}
 
     // Settings button
     const settingsIcon = new St.Icon({ icon_name: 'emblem-system-symbolic', style_class: 'system-status-icon', icon_size: 20 });
@@ -616,10 +619,23 @@ class CO2Indicator extends PanelMenu.Button {
         const rightCol = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
         const rightHeader = new St.Label({ text: 'Overall CO2 Consumers', style_class: 'co2-popup-header' });
         this._overallInfoLabel = new St.Label({ text: '—', style_class: 'co2-popup-item' });
+        // Scrollable container for potentially very long overall list so that
+        // bottom action buttons remain visible even when "show all" is enabled.
         this._rightListBox = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
+        const overallScroll = new St.ScrollView({
+            style_class: 'co2-overall-scroll',
+            overlay_scrollbars: true,
+            x_expand: true,
+            y_expand: true,
+        });
+        try {
+            // Hide horizontal scrollbar, allow vertical automatic
+            overallScroll.set_policy?.(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
+        } catch (_) { /* ignore if not available */ }
+        overallScroll.add_child(this._rightListBox);
         rightCol.add_child(rightHeader);
         rightCol.add_child(this._overallInfoLabel);
-        rightCol.add_child(this._rightListBox);
+        rightCol.add_child(overallScroll);
         cols.add_child(leftCol);
         cols.add_child(rightCol);
 
