@@ -312,8 +312,8 @@ For issues, questions, or feature requests:
 2. Search existing GitHub issues
 3. Create a new issue with detailed information
 
-- Repository: <https://github.com/adambouafia/deb-co2-consumption-monitor>
-- Issues: <https://github.com/adambouafia/deb-co2-consumption-monitor/issues>
+- Repository: <https://github.com/adam-bouafia/Gnome-Shell-CO2-Consumption-monitor-extension>
+- Issues: <https://github.com/adam-bouafia/Gnome-Shell-CO2-Consumption-monitor-extension/issues>
 
 ## Privacy
 
