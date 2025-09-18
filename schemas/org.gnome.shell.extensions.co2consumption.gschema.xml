@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.co2consumption" path="/org/gnome/shell/extensions/co2consumption/">
+    <key name="update-interval" type="i">
+      <default>5</default>
+      <summary>Update interval in seconds</summary>
+      <description>How often to refresh CO2 readings and UI.</description>
+    </key>
+
+    <key name="carbon-intensity" type="i">
+      <default>200</default>
+      <summary>Carbon intensity in gCO2/kWh</summary>
+      <description>Fixed carbon intensity used when online provider is disabled or unavailable.</description>
+    </key>
+
+    <key name="cpu-profile" type="s">
+      <default>'desktop'</default>
+      <summary>CPU power profile</summary>
+      <description>One of 'laptop', 'desktop', 'server', 'lowpower'. Used to pick power model.</description>
+    </key>
+
+    <key name="per-software-monitoring" type="b">
+      <default>true</default>
+      <summary>Per-software monitoring</summary>
+      <description>Whether to estimate per-process CO2 distribution.</description>
+    </key>
+
+    <key name="per-process-sample-ms" type="i">
+      <default>250</default>
+      <summary>Per-process sample duration ms</summary>
+      <description>How long to sample /proc for CPU shares (50–1000ms).</description>
+    </key>
+
+    <key name="per-process-top-n" type="i">
+      <default>10</default>
+      <summary>Top N processes to display</summary>
+      <description>Number of processes to show in the popup (5–25).</description>
+    </key>
+
+    <key name="color-coding" type="b">
+      <default>false</default>
+      <summary>Color coding</summary>
+      <description>Apply color classes based on emission levels.</description>
+    </key>
+
+    <key name="smoothing-enabled" type="b">
+      <default>true</default>
+      <summary>Enable emission smoothing</summary>
+      <description>Average the last N samples to reduce noise.</description>
+    </key>
+
+    <key name="smoothing-window" type="i">
+      <default>6</default>
+      <summary>Smoothing window size</summary>
+      <description>Number of recent samples to average (1-60).</description>
+    </key>
+
+    <key name="use-online-intensity" type="b">
+      <default>false</default>
+      <summary>Use online carbon intensity provider</summary>
+      <description>Fetch real-time grid carbon intensity from a provider if configured.</description>
+    </key>
+
+    <key name="intensity-provider" type="s">
+      <default>'auto-country'</default>
+      <summary>Intensity provider</summary>
+      <description>One of 'electricitymaps', 'auto-country'.</description>
+    </key>
+
+    <key name="electricitymaps-api-key" type="s">
+      <default>''</default>
+      <summary>ElectricityMaps API key</summary>
+      <description>Auth token for ElectricityMaps API v3.</description>
+    </key>
+
+    <key name="electricitymaps-zone" type="s">
+      <default>''</default>
+      <summary>ElectricityMaps zone code</summary>
+      <description>Zone code such as 'DE', 'FR', 'US-CAL'.</description>
+    </key>
+
+    <key name="auto-detect-zone" type="b">
+      <default>true</default>
+      <summary>Auto-detect zone by IP</summary>
+      <description>Try to detect country code from IP and use it as zone when provider supports it and zone is not set.</description>
+    </key>
+
+    <key name="provider-cache-ttl" type="i">
+      <default>120</default>
+      <summary>Provider cache TTL seconds</summary>
+      <description>Cache duration for online carbon intensity to reduce API calls.</description>
+    </key>
+
+    <key name="show-trend" type="b">
+      <default>true</default>
+      <summary>Show trend sparkline</summary>
+      <description>Display a small trend of recent emissions in the popup menu.</description>
+    </key>
+
+    <key name="show-intensity" type="b">
+      <default>true</default>
+      <summary>Show carbon intensity row</summary>
+      <description>Display current carbon intensity and provider in the popup.</description>
+    </key>
+
+    <key name="monochrome-mode" type="b">
+      <default>true</default>
+      <summary>Monochrome mode</summary>
+      <description>Force a single neutral color for the indicator and popup, even when color-coding is enabled.</description>
+    </key>
+
+    <key name="history-length" type="i">
+      <default>60</default>
+      <summary>History length samples</summary>
+      <description>Number of emission samples to keep for trend (10-300).</description>
+    </key>
+
+    <!-- Persistent totals -->
+    <key name="cumulative-total-g" type="d">
+      <default>0.0</default>
+      <summary>Cumulative total CO2 in grams</summary>
+      <description>All-time accumulated CO2 emissions in grams across sessions.</description>
+    </key>
+
+    <key name="daily-total-g" type="d">
+      <default>0.0</default>
+      <summary>Daily total CO2 in grams</summary>
+      <description>Accumulated CO2 emissions for the current day in grams.</description>
+    </key>
+
+    <key name="daily-epoch-day" type="i">
+      <default>0</default>
+      <summary>Epoch day for daily total</summary>
+      <description>Days since Unix epoch to determine when to reset daily total.</description>
+    </key>
+
+    <!-- Weekly and monthly totals -->
+    <key name="weekly-total-g" type="d">
+      <default>0.0</default>
+      <summary>Weekly total CO2 in grams</summary>
+      <description>Accumulated CO2 emissions for the current ISO week in grams.</description>
+    </key>
+    <key name="weekly-epoch-week" type="i">
+      <default>0</default>
+      <summary>Epoch week number</summary>
+      <description>Number of weeks since Unix epoch (Monday-based) to detect week rollover.</description>
+    </key>
+
+    <key name="monthly-total-g" type="d">
+      <default>0.0</default>
+      <summary>Monthly total CO2 in grams</summary>
+      <description>Accumulated CO2 emissions for the current month in grams.</description>
+    </key>
+    <key name="monthly-epoch-ym" type="i">
+      <default>0</default>
+      <summary>Epoch year-month</summary>
+      <description>Year*100 + month (1-12) integer to detect month rollover.</description>
+    </key>
+
+    <!-- Week start and export settings -->
+    <key name="week-start-day" type="s">
+      <default>'monday'</default>
+      <summary>Week start day</summary>
+      <description>One of 'monday' or 'sunday'. Affects weekly rollover and displayed week number.</description>
+    </key>
+
+    <key name="export-directory" type="s">
+      <default>''</default>
+      <summary>Export directory</summary>
+      <description>Directory path for CSV exports and history. Empty means $HOME.</description>
+    </key>
+
+    <!-- Power source transition resets removed -->
+
+    <!-- Daily history and export options -->
+    <key name="daily-history-json" type="s">
+      <default>'{}'</default>
+      <summary>Daily history JSON</summary>
+      <description>JSON object of profiles mapping to date->grams for last N days.</description>
+    </key>
+
+    <!-- Per-software cumulative totals (persisted) -->
+    <key name="software-totals-json" type="s">
+      <default>'{}'</default>
+      <summary>Per-software cumulative totals</summary>
+      <description>JSON object of profiles mapping to software-name->total grams emitted.</description>
+    </key>
+
+    <key name="history-days" type="i">
+      <default>30</default>
+      <summary>History window days</summary>
+      <description>Number of days to retain in daily history and to export.</description>
+    </key>
+
+    <key name="auto-export-history" type="b">
+      <default>false</default>
+      <summary>Auto export history on day change</summary>
+      <description>When enabled, exports daily history CSV automatically at day rollover.</description>
+    </key>
+
+    <key name="enable-periodic-export" type="b">
+      <default>false</default>
+      <summary>Enable periodic export</summary>
+      <description>When enabled, writes the daily history CSV every N minutes.</description>
+    </key>
+
+    <key name="export-interval-min" type="i">
+      <default>30</default>
+      <summary>Periodic export interval minutes</summary>
+      <description>How often to export when enabled (5–240).</description>
+    </key>
+
+    <key name="profile-name" type="s">
+      <default>''</default>
+      <summary>Profile name</summary>
+      <description>Optional profile label used to namespace history and exports. Empty means default.</description>
+    </key>
+
+    <!-- UI toggles -->
+    <key name="overall-show-all" type="b">
+      <default>true</default>
+      <summary>Show all overall software totals</summary>
+      <description>When true, the popup shows all software totals instead of limiting to Top N.</description>
+    </key>
+
+    <!-- Display unit: one of 'g', 'mg', 'kg' -->
+    <key name="display-unit" type="s">
+      <default>'g'</default>
+      <summary>Display unit</summary>
+      <description>Unit for displaying CO2 amounts in the panel and popup. One of 'g', 'mg', or 'kg'.</description>
+    </key>
+
+    <!-- Popup opacity percentage (0-100) -->
+    <key name="popup-opacity" type="i">
+      <default>100</default>
+      <summary>Popup background opacity percent</summary>
+      <description>Adjust the opacity of the popup background (0 transparent, 100 opaque). Applied to the popup menu background color.</description>
+    </key>
+
+    <!-- Safe Mode: disable heavy features for recovery/bisecting -->
+    <key name="safe-mode" type="b">
+      <default>false</default>
+      <summary>Safe Mode</summary>
+      <description>When enabled, disables per-process sampling, online provider, geolocation, and periodic/auto exports for stability.</description>
+    </key>
+  </schema>
+</schemalist>

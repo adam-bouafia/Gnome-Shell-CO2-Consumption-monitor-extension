@@ -1,0 +1,55 @@
+/* CO2 Consumption Monitor Stylesheet */
+
+/* Panel indicator container + label/icon styling */
+.co2-monitor-box { align-items: center; }
+/* Icon now comes after the value; tighten spacing */
+.co2-monitor-icon { margin-left: 0px; }
+.co2-monitor-label { font-weight: 800; color: #f2f2f2; padding: 0 0px; font-size: 14px; }
+
+/* Neutralize color coding: keep text color consistent instead of green/red palette */
+.co2-level-very-low,
+.co2-level-low,
+.co2-level-moderate,
+.co2-level-high,
+.co2-level-very-high,
+.co2-level-extreme,
+.co2-level-critical {
+	color: #f2f2f2;
+}
+
+/* Popup menu styling */
+.co2-popup-header { font-weight: 600; font-size: 1.05em; color: #000000; }
+
+.co2-popup-item { font-family: monospace; font-size: 0.9em; color: #000000; }
+
+.co2-software-item { padding-left: 16px; font-size: 0.85em; color: #000000; }
+
+/* Popup bottom-right controls */
+.co2-popup-controls { padding: 6px 10px; }
+.co2-popup-btn { margin-left: 8px; }
+/* Add small severity badge before item text */
+.co2-software-item .badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+
+/* Accessible badge colors on white background */
+.popup-menu .badge.badge-very-low { background-color: #10B981; }   /* emerald 500 */
+.popup-menu .badge.badge-low { background-color: #34D399; }        /* emerald 400 */
+.popup-menu .badge.badge-moderate { background-color: #FBBF24; }   /* amber 400 */
+.popup-menu .badge.badge-high { background-color: #F59E0B; }       /* amber 500 */
+.popup-menu .badge.badge-very-high { background-color: #EF4444; }  /* red 500 */
+.popup-menu .badge.badge-extreme { background-color: #DC2626; }    /* red 600 */
+.popup-menu .badge.badge-critical { background-color: #7F1D1D; }   /* dark red */
+
+/*
+ New popup color palette for per-process rows
+ We scope to .popup-menu to avoid changing the panel label colors and keep the
+ default global neutralization in place elsewhere. Customize as desired.
+*/
+/* Neutralize severity colors in popup to keep text black on white background */
+.popup-menu .co2-level-very-low,
+.popup-menu .co2-level-low,
+.popup-menu .co2-level-moderate,
+.popup-menu .co2-level-high,
+.popup-menu .co2-level-very-high,
+.popup-menu .co2-level-extreme,
+.popup-menu .co2-level-critical { color: #000000; }
+
