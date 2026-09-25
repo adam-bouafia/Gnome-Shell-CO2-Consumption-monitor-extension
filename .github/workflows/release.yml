@@ -28,7 +28,13 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "${{ steps.pack.outputs.zip }}" --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          zip="${{ steps.pack.outputs.zip }}"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$zip" --title "$GITHUB_REF_NAME" --generate-notes
+          fi
 
       - name: Upload to extensions.gnome.org
         env:
@@ -38,8 +44,9 @@ jobs:
           token=$(jq -n --arg l "$EGO_USERNAME" --arg p "$EGO_PASSWORD" '{login: $l, password: $p}' \
             | curl -sS -X POST https://extensions.gnome.org/api/v1/accounts/login/ \
                 -H 'Content-Type: application/json' -d @- \
-            | jq -r '.token // empty')
+            | jq -r '.token.token // empty')
           [[ -n "$token" ]] || { echo "::error::EGO login failed"; exit 1; }
+          echo "::add-mask::$token"
 
           curl -sS --fail-with-body -X POST https://extensions.gnome.org/api/v1/extensions \
             -H "Authorization: Token $token" \
