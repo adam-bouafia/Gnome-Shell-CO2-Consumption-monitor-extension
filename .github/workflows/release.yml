@@ -1,0 +1,51 @@
+name: Release
+
+# Push a tag like v9 or v9.1 to build, attach the zip to a GitHub release
+# and upload it to extensions.gnome.org for review.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends jq zip
+
+      - name: Build zip
+        id: pack
+        run: echo "zip=$(scripts/pack.sh "${GITHUB_REF_NAME#v}")" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "${{ steps.pack.outputs.zip }}" --title "$GITHUB_REF_NAME" --generate-notes
+
+      - name: Upload to extensions.gnome.org
+        env:
+          EGO_USERNAME: ${{ secrets.EGO_USERNAME }}
+          EGO_PASSWORD: ${{ secrets.EGO_PASSWORD }}
+        run: |
+          token=$(jq -n --arg l "$EGO_USERNAME" --arg p "$EGO_PASSWORD" '{login: $l, password: $p}' \
+            | curl -sS -X POST https://extensions.gnome.org/api/v1/accounts/login/ \
+                -H 'Content-Type: application/json' -d @- \
+            | jq -r '.token // empty')
+          [[ -n "$token" ]] || { echo "::error::EGO login failed"; exit 1; }
+
+          curl -sS --fail-with-body -X POST https://extensions.gnome.org/api/v1/extensions \
+            -H "Authorization: Token $token" \
+            -F "source=@${{ steps.pack.outputs.zip }}" \
+            -F shell_license_compliant=true \
+            -F tos_compliant=true
+
+          curl -sS -X POST https://extensions.gnome.org/api/v1/accounts/logout/ \
+            -H "Authorization: Token $token" > /dev/null || true

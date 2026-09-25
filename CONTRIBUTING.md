@@ -319,6 +319,19 @@ Before releasing:
 - [ ] Create release notes
 - [ ] Tag the release
 
+### Publishing
+
+Releases are published by GitHub Actions. Pushing a tag starting with `v` runs CI, builds the zip with `scripts/pack.sh`, attaches it to a GitHub release and uploads it to extensions.gnome.org for review:
+
+```bash
+git tag v9
+git push origin v9
+```
+
+The tag (without the `v`) becomes `version-name` in the uploaded `metadata.json`; EGO assigns the numeric `version` itself. The workflow needs the repository secrets `EGO_USERNAME` and `EGO_PASSWORD` (the extensions.gnome.org account that owns the extension).
+
+To build the zip locally: `scripts/pack.sh [version-name]`.
+
 ## Recognition
 
 Contributors are recognized in:
