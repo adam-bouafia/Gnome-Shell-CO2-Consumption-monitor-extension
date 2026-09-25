@@ -389,28 +389,17 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
         // Import overall software
         const importOverallBtn = new Gtk.Button({ label: 'Import' });
         importOverallBtn.connect('clicked', () => {
-            const dialog = new Gtk.FileChooserNative({
-                title: 'Select Overall Software CSV',
-                action: Gtk.FileChooserAction.OPEN,
-                transient_for: this.get_root(),
-                modal: true,
-            });
-            dialog.connect('response', (d, res) => {
+            const dialog = new Gtk.FileDialog({ title: 'Select Overall Software CSV', modal: true });
+            dialog.open(this.get_root(), null, (d, res) => {
                 try {
-                    if (res === Gtk.ResponseType.ACCEPT) {
-                        const file = d.get_file();
-                        if (file) {
-                            const [ok, bytes] = file.load_contents(null);
-                            if (ok) {
-                                const text = new TextDecoder('utf-8').decode(bytes);
-                                importOverallSoftwareFromText(this._settings, text);
-                            }
-                        }
+                    const file = d.open_finish(res);
+                    const [ok, bytes] = file.load_contents(null);
+                    if (ok) {
+                        const text = new TextDecoder('utf-8').decode(bytes);
+                        importOverallSoftwareFromText(this._settings, text);
                     }
-                } catch (_) {}
-                d.destroy();
+                } catch (_) { /* cancelled or unreadable */ }
             });
-            dialog.show();
         });
         group.add(new Adw.ActionRow({
             title: 'Import Overall Software Totals (CSV)',
@@ -423,17 +412,19 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
         const resetAllBtn = new Gtk.Button({ label: 'Reset All (Day/Week/Month/All-time/Overall)' });
         resetAllBtn.add_css_class('destructive-action');
         resetAllBtn.connect('clicked', () => {
-            const dlg = new Adw.MessageDialog({
-                transient_for: this.get_root(),
-                modal: true,
+            const params = {
                 heading: 'Reset all totals?',
                 body: 'This clears Daily, Weekly, Monthly, All-time, and Overall Software totals for the active profile.',
-            });
+            };
+            // Adw.AlertDialog needs libadwaita 1.5 (GNOME 46); MessageDialog is deprecated.
+            const dlg = Adw.AlertDialog
+                ? new Adw.AlertDialog(params)
+                : new Adw.MessageDialog({ ...params, transient_for: this.get_root(), modal: true });
             dlg.add_response('cancel', 'Cancel');
             dlg.add_response('reset', 'Reset');
             dlg.set_response_appearance('reset', Adw.ResponseAppearance.DESTRUCTIVE);
             dlg.connect('response', (_d, id) => {
-                if (id !== 'reset') { dlg.destroy(); return; }
+                if (id !== 'reset') return;
                 try {
                     this._settings.set_double('daily-total-g', 0);
                     this._settings.set_double('weekly-total-g', 0);
@@ -448,9 +439,11 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
                     obj[profile] = {};
                     this._settings.set_string('software-totals-json', JSON.stringify(obj));
                 } catch (_) {}
-                dlg.destroy();
             });
-            dlg.present();
+            if (Adw.AlertDialog)
+                dlg.present(this.get_root());
+            else
+                dlg.present();
         });
         resetRow.add_suffix(resetAllBtn);
         group.add(resetRow);
@@ -678,28 +671,22 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
 
     _promptImportHistory() {
         try {
-            const dialog = new Gtk.FileChooserNative({
-                title: 'Select CSV or JSON file',
-                action: Gtk.FileChooserAction.OPEN,
-                transient_for: this.get_root(),
-                modal: true,
-            });
             const filter = new Gtk.FileFilter();
             filter.add_pattern('*.csv');
             filter.add_pattern('*.json');
             filter.set_name('CSV or JSON');
-            dialog.add_filter(filter);
-            dialog.connect('response', (dlg, response) => {
-                if (response === Gtk.ResponseType.ACCEPT) {
-                    const file = dlg.get_file();
-                    const path = file?.get_path?.();
-                    if (path) {
-                        try { importHistoryFromPath(this._settings, path); } catch (_) {}
-                    }
-                }
-                dlg.destroy();
+            const dialog = new Gtk.FileDialog({
+                title: 'Select CSV or JSON file',
+                modal: true,
+                default_filter: filter,
             });
-            dialog.show();
+            dialog.open(this.get_root(), null, (dlg, res) => {
+                let path = null;
+                try { path = dlg.open_finish(res)?.get_path?.(); } catch (_) { /* cancelled */ }
+                if (path) {
+                    try { importHistoryFromPath(this._settings, path); } catch (_) {}
+                }
+            });
         } catch (e) {
             console.warn(`CO2 Prefs: file chooser error: ${e}`);
         }
