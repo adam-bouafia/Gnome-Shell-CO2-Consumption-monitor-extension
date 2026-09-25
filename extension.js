@@ -171,7 +171,7 @@ class CO2Indicator extends PanelMenu.Button {
             } catch (_) {}
         };
         applyPopupOpacity();
-        this.menu.connect('open-state-changed', (_m, isOpen) => { if (isOpen) applyPopupOpacity(); });
+        this._menuOpenId = this.menu.connect('open-state-changed', (_m, isOpen) => { if (isOpen) applyPopupOpacity(); });
         try { this._settingsSignalIds.push(this._settings.connect('changed::popup-opacity', applyPopupOpacity)); } catch (_) {}
 
         // Current consumption header
@@ -617,6 +617,7 @@ class CO2Indicator extends PanelMenu.Button {
             try { this._settings.disconnect(id); } catch (_) {}
         }
         this._settingsSignalIds = [];
+        if (this._menuOpenId) { this.menu.disconnect(this._menuOpenId); this._menuOpenId = null; }
         super.destroy();
     }
 });
