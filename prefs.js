@@ -13,7 +13,7 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 import {
     exportTotalsCSV, exportDailyHistoryCSV,
     exportOverallSoftwareCSV, getOverallSoftwareTotals,
-    importOverallSoftwareFromText, importHistoryFromPath,
+    importOverallSoftwareFromText, importHistoryFromText,
 } from './lib/storage.js';
 
 // ---------------------------------------------------------------------------
@@ -681,11 +681,14 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
                 default_filter: filter,
             });
             dialog.open(this.get_root(), null, (dlg, res) => {
-                let path = null;
-                try { path = dlg.open_finish(res)?.get_path?.(); } catch (_) { /* cancelled */ }
-                if (path) {
-                    try { importHistoryFromPath(this._settings, path); } catch (_) {}
-                }
+                try {
+                    const file = dlg.open_finish(res);
+                    const [ok, bytes] = file.load_contents(null);
+                    if (ok) {
+                        const text = new TextDecoder('utf-8').decode(bytes);
+                        importHistoryFromText(this._settings, text, /\.json$/i.test(file.get_basename()));
+                    }
+                } catch (_) { /* cancelled or unreadable */ }
             });
         } catch (e) {
             console.warn(`CO2 Prefs: file chooser error: ${e}`);
