@@ -65,6 +65,20 @@ function _tryCreateLogoIcon(basePath) {
 }
 
 // ---------------------------------------------------------------------------
+// Layout helper
+// ---------------------------------------------------------------------------
+
+// St.BoxLayout:vertical was removed in GNOME 51; :orientation exists from 48.
+function vbox(params = {}) {
+    const box = new St.BoxLayout(params);
+    if ('orientation' in box)
+        box.orientation = Clutter.Orientation.VERTICAL;
+    else
+        box.vertical = true;
+    return box;
+}
+
+// ---------------------------------------------------------------------------
 // CO2 Panel Indicator
 // ---------------------------------------------------------------------------
 
@@ -123,7 +137,7 @@ class CO2Indicator extends PanelMenu.Button {
     // -----------------------------------------------------------------------
 
     _buildPanel() {
-        this._box = new St.BoxLayout({ style_class: 'co2-monitor-box', vertical: false });
+        this._box = new St.BoxLayout({ style_class: 'co2-monitor-box' });
         this._box.set_y_align?.(Clutter.ActorAlign.CENTER);
         this._box.y_align = Clutter.ActorAlign.CENTER;
         this._box.set_spacing?.(0);
@@ -208,21 +222,21 @@ class CO2Indicator extends PanelMenu.Button {
         this._consumersColumnsSection.addMenuItem(this._consumersItem);
 
         const columnsContainer = this._consumersItem.actor || this._consumersItem;
-        const cols = new St.BoxLayout({ vertical: false, x_expand: true });
+        const cols = new St.BoxLayout({ x_expand: true });
         cols.set_spacing?.(12);
         columnsContainer.add_child(cols);
 
         // Left column
-        const leftCol = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
+        const leftCol = vbox({ x_expand: true, y_expand: true });
         leftCol.add_child(new St.Label({ text: 'Current CO2 Consumers', style_class: 'co2-popup-header' }));
-        this._leftListBox = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
+        this._leftListBox = vbox({ x_expand: true, y_expand: true });
         leftCol.add_child(this._leftListBox);
 
         // Right column (scrollable)
-        const rightCol = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
+        const rightCol = vbox({ x_expand: true, y_expand: true });
         rightCol.add_child(new St.Label({ text: 'Overall CO2 Consumers', style_class: 'co2-popup-header' }));
         this._overallInfoLabel = new St.Label({ text: '--', style_class: 'co2-popup-item' });
-        this._rightListBox = new St.BoxLayout({ vertical: true, x_expand: true, y_expand: true });
+        this._rightListBox = vbox({ x_expand: true, y_expand: true });
         const overallScroll = new St.ScrollView({
             style_class: 'co2-overall-scroll', overlay_scrollbars: true,
             x_expand: true, y_expand: true,
@@ -238,7 +252,7 @@ class CO2Indicator extends PanelMenu.Button {
         // Bottom controls
         const bottomSection = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(bottomSection);
-        const controls = new St.BoxLayout({ vertical: false });
+        const controls = new St.BoxLayout();
         controls.add_style_class_name?.('co2-popup-controls');
         controls.add_child(new St.Widget({ x_expand: true })); // filler
 
@@ -493,7 +507,7 @@ class CO2Indicator extends PanelMenu.Button {
             } else {
                 for (const sw of topSoftware) {
                     if (!(sw.co2_g > 0)) continue;
-                    const row = new St.BoxLayout({ vertical: false });
+                    const row = new St.BoxLayout();
                     if (wantColors) {
                         const badge = this._badgeClass(sw.co2_g);
                         if (badge) row.add_child(new St.BoxLayout({ style_class: `badge ${badge}` }));
@@ -521,7 +535,7 @@ class CO2Indicator extends PanelMenu.Button {
             }
 
             for (const r of rows) {
-                const rowBox = new St.BoxLayout({ vertical: false });
+                const rowBox = new St.BoxLayout();
                 if (wantColors) {
                     const badge = this._badgeClass(r.g);
                     if (badge) rowBox.add_child(new St.BoxLayout({ style_class: `badge ${badge}` }));
