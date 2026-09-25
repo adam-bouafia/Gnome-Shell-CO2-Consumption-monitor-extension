@@ -90,8 +90,8 @@ class CO2Indicator extends PanelMenu.Button {
         this._settings = settings;
         this._openPrefs = openPrefs;
         this._updating = false;
-        this._prevCpuTimes = getCpuTimes();
-        this._prevRapl = readRaplSnapshot();
+        this._prevCpuTimes = null;
+        this._prevRapl = null;
         this._rolling = [];
         this._history = [];
         this._lastShares = [];
@@ -101,7 +101,7 @@ class CO2Indicator extends PanelMenu.Button {
         this._lastIntensityValue = null;
         this._lastIntensitySource = 'fixed';
         this._lastCountryCode = null;
-        this._lastPowerSource = raplAvailable() ? 'rapl' : 'heuristic';
+        this._lastPowerSource = 'heuristic';
         this._periodicExportId = null;
         this._settingsSignalIds = [];
 
@@ -124,12 +124,18 @@ class CO2Indicator extends PanelMenu.Button {
         } catch (_) {}
 
         this._setupPeriodicExport();
+        this._primeMeasurements().catch(e => console.warn(`CO2 Monitor: initial sample failed: ${e}`));
+    }
 
-        if (raplAvailable()) {
-            console.info('CO2 Monitor: Using RAPL for power measurement (CodeCarbon mode)');
-        } else {
-            console.info('CO2 Monitor: RAPL unavailable, using CPU heuristic + RAM estimation');
-        }
+    /** Take the first CPU/RAPL snapshot so the first interval has a baseline. */
+    async _primeMeasurements() {
+        const [cpu, rapl, hasRapl] = await Promise.all([getCpuTimes(), readRaplSnapshot(), raplAvailable()]);
+        this._prevCpuTimes ??= cpu;
+        this._prevRapl ??= rapl;
+        this._lastPowerSource = hasRapl ? 'rapl' : 'heuristic';
+        console.info(hasRapl
+            ? 'CO2 Monitor: Using RAPL for power measurement (CodeCarbon mode)'
+            : 'CO2 Monitor: RAPL unavailable, using CPU heuristic + RAM estimation');
     }
 
     // -----------------------------------------------------------------------
@@ -331,10 +337,9 @@ class CO2Indicator extends PanelMenu.Button {
             const sampleMs = Math.max(50, Math.min(1000, this._settings.get_int('per-process-sample-ms') || 250));
             await sleepMs(sampleMs);
 
-            const currCpu = getCpuTimes();
+            const [currCpu, currRapl] = await Promise.all([getCpuTimes(), readRaplSnapshot()]);
             const cpuPercent = getCpuUsagePercent(this._prevCpuTimes, currCpu);
-            const currRapl = readRaplSnapshot();
-            const power = getTotalPowerWatts({
+            const power = await getTotalPowerWatts({
                 prevRapl: this._prevRapl,
                 currRapl,
                 cpuPercent,
