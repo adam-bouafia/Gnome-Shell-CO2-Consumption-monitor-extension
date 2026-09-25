@@ -535,7 +535,7 @@ class CO2ConsumptionPreferences extends Adw.PreferencesPage {
 
     _buildHistoryGroup() {
         const group = new Adw.PreferencesGroup({
-            title: 'History & Export',
+            title: 'History &amp; Export',
             description: 'Configure daily history and automatic exports',
         });
         this.add(group);
