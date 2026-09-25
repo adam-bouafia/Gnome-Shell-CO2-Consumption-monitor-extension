@@ -90,6 +90,9 @@ class CO2Indicator extends PanelMenu.Button {
         this._settings = settings;
         this._openPrefs = openPrefs;
         this._updating = false;
+        // Cancelled in destroy(): aborts in-flight reads, HTTP requests and sleeps,
+        // and stops an update that is mid-await from touching destroyed actors.
+        this._cancellable = new Gio.Cancellable();
         this._prevCpuTimes = null;
         this._prevRapl = null;
         this._rolling = [];
@@ -129,7 +132,9 @@ class CO2Indicator extends PanelMenu.Button {
 
     /** Take the first CPU/RAPL snapshot so the first interval has a baseline. */
     async _primeMeasurements() {
-        const [cpu, rapl, hasRapl] = await Promise.all([getCpuTimes(), readRaplSnapshot(), raplAvailable()]);
+        const c = this._cancellable;
+        const [cpu, rapl, hasRapl] = await Promise.all([getCpuTimes(c), readRaplSnapshot(c), raplAvailable(c)]);
+        if (c.is_cancelled()) return;
         this._prevCpuTimes ??= cpu;
         this._prevRapl ??= rapl;
         this._lastPowerSource = hasRapl ? 'rapl' : 'heuristic';
@@ -309,8 +314,9 @@ class CO2Indicator extends PanelMenu.Button {
     }
 
     async _updateData() {
-        if (this._updating) return;
+        if (this._updating || this._cancellable.is_cancelled()) return;
         this._updating = true;
+        const cancellable = this._cancellable;
         try {
             const interval = this._settings.get_int('update-interval');
             const profile = this._settings.get_string('cpu-profile');
@@ -327,7 +333,9 @@ class CO2Indicator extends PanelMenu.Button {
                 basePath: this._basePath,
                 cache: this._intensityCache,
                 cacheTtl: Math.max(10, Math.min(3600, this._settings.get_int('provider-cache-ttl'))),
+                cancellable,
             });
+            if (cancellable.is_cancelled()) return;
             const intensity = intensityResult.intensity;
             this._lastIntensityValue = intensity;
             this._lastIntensitySource = intensityResult.source;
@@ -335,16 +343,19 @@ class CO2Indicator extends PanelMenu.Button {
 
             // -- Power measurement (CodeCarbon approach) --
             const sampleMs = Math.max(50, Math.min(1000, this._settings.get_int('per-process-sample-ms') || 250));
-            await sleepMs(sampleMs);
+            await sleepMs(sampleMs, cancellable);
+            if (cancellable.is_cancelled()) return;
 
-            const [currCpu, currRapl] = await Promise.all([getCpuTimes(), readRaplSnapshot()]);
+            const [currCpu, currRapl] = await Promise.all([getCpuTimes(cancellable), readRaplSnapshot(cancellable)]);
             const cpuPercent = getCpuUsagePercent(this._prevCpuTimes, currCpu);
             const power = await getTotalPowerWatts({
                 prevRapl: this._prevRapl,
                 currRapl,
                 cpuPercent,
                 profile,
+                cancellable,
             });
+            if (cancellable.is_cancelled()) return;
             this._prevCpuTimes = currCpu;
             this._prevRapl = currRapl;
             this._lastPowerSource = power.source;
@@ -371,7 +382,8 @@ class CO2Indicator extends PanelMenu.Button {
                 try {
                     this._sampleTick++;
                     if (this._sampleTick % 6 === 1) {
-                        this._lastShares = await sampleProcessShares(sampleMs);
+                        this._lastShares = await sampleProcessShares(sampleMs, cancellable);
+                        if (cancellable.is_cancelled()) return;
                     }
                     const topN = Math.max(5, Math.min(25, this._settings.get_int('per-process-top-n') || 10));
                     perSoftware = (this._lastShares || [])
@@ -396,12 +408,13 @@ class CO2Indicator extends PanelMenu.Button {
             this._co2Data = { total_co2_g: totalCO2g, per_software_co2: perSoftware, watts: power.watts };
             this._updateUI();
         } catch (e) {
+            if (cancellable.is_cancelled()) return;
             console.error(`CO2 Monitor: estimation error: ${e}`);
             this._co2Data = { total_co2_g: 0, per_software_co2: [], error: e.toString() };
             this._updateUI();
         } finally {
             this._updating = false;
-            this._scheduleNext();
+            if (!cancellable.is_cancelled()) this._scheduleNext();
         }
     }
 
@@ -614,6 +627,7 @@ class CO2Indicator extends PanelMenu.Button {
     // -----------------------------------------------------------------------
 
     destroy() {
+        this._cancellable.cancel();
         if (this._timeoutId) { GLib.source_remove(this._timeoutId); this._timeoutId = null; }
         clearEphemeralTimeouts();
         if (this._periodicExportId) { GLib.source_remove(this._periodicExportId); this._periodicExportId = null; }
