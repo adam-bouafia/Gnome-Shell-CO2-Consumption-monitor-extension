@@ -31,6 +31,17 @@ jobs:
       - name: Build zip
         run: scripts/pack.sh
 
+      # EGO's own linter. Report-only: it still flags GNOME 51 as a future release.
+      # tree-sitter 0.26 segfaults with tree-sitter-javascript 0.25, hence the pin.
+      - name: Lint with shexli
+        run: |
+          python3 -m venv /tmp/shexli
+          /tmp/shexli/bin/pip install -q "tree-sitter==0.25.*" \
+            "shexli @ git+https://gitlab.gnome.org/Infrastructure/extensions-web.git@064941f925713ca282b5d8507e750bc9a1fb209f#subdirectory=shexli"
+          /tmp/shexli/bin/shexli --format json *.shell-extension.zip > shexli.json || true
+          jq -r '.findings[] | .evidence[0] as $e
+            | "::\(if .severity == "error" then "error" else "warning" end) file=\($e.path | sub("^[^:]*:"; "")),line=\($e.line // 1),title=\(.rule_id)::\(.title)"' shexli.json
+
       - uses: actions/upload-artifact@v4
         with:
           name: shell-extension
